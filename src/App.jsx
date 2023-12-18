@@ -8,17 +8,25 @@ import logoImg from "./assets/logo.png";
 import { sortPlacesByDistance } from "./loc.js";
 
 function App() {
-  const modal = useRef();
+  const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+  const storedPlaces = storedIds.map((id) =>
+    AVAILABLE_PLACES.find((place) => place.id === id)
+  );
+
+  const [modalIsOpen , setModalIsOpen] = useState(false);
   const selectedPlace = useRef();
-  const [pickedPlaces, setPickedPlaces] = useState([]);
+  const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
   const [availablePlaces, setAvailablePlaces] = useState([]);
-  useEffect(() => {
-    const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
-    const storedPlaces = storedIds.map((id) =>
-      AVAILABLE_PLACES.find((place) => place.id === id)
-    );
-    setPickedPlaces(storedPlaces);
-  }, []);
+  // fetching the stored places
+  // useEffect(() => {
+  //   const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+  //   const storedPlaces = storedIds.map((id) =>
+  //     AVAILABLE_PLACES.find((place) => place.id === id)
+  //   );
+
+  //   setPickedPlaces(storedPlaces);
+
+  // }, []);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((position) => {
@@ -34,14 +42,15 @@ function App() {
   }, []);
 
   function handleStartRemovePlace(id) {
-    modal.current.open();
+    setModalIsOpen(true);
     selectedPlace.current = id;
   }
 
   function handleStopRemovePlace() {
-    modal.current.close();
+    setModalIsOpen(false);
   }
 
+  //now we need to store the data into browser data so the we dont loose data on reload
   function handleSelectPlace(id) {
     setPickedPlaces((prevPickedPlaces) => {
       if (prevPickedPlaces.some((place) => place.id === id)) {
@@ -65,8 +74,7 @@ function App() {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
     );
-    modal.current.close();
-
+    setModalIsOpen(false);
     const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
     localStorage.setItem(
       "selectedPlaces",
@@ -75,6 +83,8 @@ function App() {
           (id) =>
             id !==
             selectedPlace.current /* if these id do match we want to delete item ,hence if the ids do not match we are sure of keeping that item */
+          // if the id does not matches hence this will return true and we will keep that element in the array
+          // if the id does match hence this will return false and we will drop the element from that array
         )
       )
     );
@@ -82,13 +92,13 @@ function App() {
 
   return (
     <>
-      <Modal ref={modal}>
+      <Modal open={modalIsOpen}>
         <DeleteConfirmation
           onCancel={handleStopRemovePlace}
           onConfirm={handleRemovePlace}
         />
       </Modal>
-
+ 
       <header>
         <img src={logoImg} alt="Stylized globe" />
         <h1>PlacePicker</h1>
